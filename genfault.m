@@ -102,15 +102,45 @@ function [IT, VNF] = genfault(YN, YF, IintN, IintF, idN, idF)
                 i, idN(i), idF(i), real(IT(i)), imag(IT(i)), abs(IT(i)));
     end
     
-    fprintf('\nStep 4: Results Summary\n');
+    % Step 5: Display healthy network voltages
+    fprintf('\nStep 4: Healthy Network Voltages with Fault Network Connected\n');
+    fprintf('-------------------------------------------------------------\n');
+    
+    VN_original = linsolve(YN, IintN);
+    
+    fprintf('Node   Pre-fault |V|   Post-fault |V|   Magnitude Change   Phase Change (°)\n');
+    fprintf('----   --------------   ---------------   --------------   ---------------\n');
+    for i = 1:N
+        pre_mag = abs(VN_original(i));
+        post_mag = abs(VNF(i));
+        mag_change = post_mag - pre_mag;
+        phase_change = (angle(VNF(i)) - angle(VN_original(i))) * 180/pi;
+        
+        fprintf('%3d      %8.4f         %8.4f        %9.4f         %9.2f\n', ...
+                i, pre_mag, post_mag, mag_change, phase_change);
+    end
+    
+    % Display voltage in polar form
+    fprintf('\nHealthy Network Voltages (Polar Form):\n');
+    fprintf('Node     Magnitude (p.u.)   Phase Angle (°)\n');
+    fprintf('----     ----------------   --------------\n');
+    for i = 1:N
+        fprintf('%3d         %8.4f           %8.2f\n', ...
+                i, abs(VNF(i)), angle(VNF(i))*180/pi);
+    end
+    
+    fprintf('\nStep 5: Results Summary\n');
     fprintf('----------------------\n');
     fprintf('Healthy network voltages calculated for %d nodes\n', N);
     fprintf('Tie-line currents calculated for %d connections\n', length(idN));
     
-    % Display voltage changes
-    VN_original = linsolve(YN, IintN);
-    voltage_changes = abs(VNF) - abs(VN_original);
+    % Display maximum voltage changes
+    voltage_mag_changes = abs(VNF) - abs(VN_original);
+    voltage_phase_changes = (angle(VNF) - angle(VN_original)) * 180/pi;
     
-    fprintf('\nMaximum voltage change in healthy network: %.4f p.u.\n', max(abs(voltage_changes)));
-    fprintf('Node with largest voltage change: %d\n', find(abs(voltage_changes) == max(abs(voltage_changes)), 1));
+    [max_mag_change, max_mag_node] = max(abs(voltage_mag_changes));
+    [max_phase_change, max_phase_node] = max(abs(voltage_phase_changes));
+    
+    fprintf('\nMaximum voltage magnitude change: %.4f p.u. at node %d\n', max_mag_change, max_mag_node);
+    fprintf('Maximum voltage phase change: %.2f° at node %d\n', max_phase_change, max_phase_node);
 end
