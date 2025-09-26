@@ -147,3 +147,96 @@ fprintf('\n=== GENERALIZED FAULT ANALYSIS COMPLETE ===\n');
 
 % Save results
 save('genfault_results.mat', 'IT_a', 'VNF_a', 'IT_b', 'VNF_b', 'IT_c', 'VNF_c', 'IT_d', 'VNF_d');
+
+%-----------------------------------------------------
+%% Validation Tests
+fprintf('\n\n=== VALIDATION TESTS ===\n');
+fprintf('=======================\n');
+
+% Test Part (b) results
+fprintf('\nPART (B) VALIDATION:\n');
+fprintf('-------------------\n');
+fprintf('Tie-line current: %.4f + j%.4f p.u. (|I| = %.4f p.u.)\n', real(IT_b), imag(IT_b), abs(IT_b));
+
+% Check power balance
+S_injected_b = VNF_b .* conj(IintN_b);
+total_power_b = sum(S_injected_b);
+fprintf('Total power balance: %.6f + j%.6f VA\n', real(total_power_b), imag(total_power_b));
+
+% Check voltage magnitude range
+fprintf('Voltage magnitude range: %.4f to %.4f p.u.\n', min(abs(VNF_b)), max(abs(VNF_b)));
+
+% Check load bus voltages (typical IEEE 9-bus load buses: 5, 6, 8)
+load_buses_b = [5, 6, 8];
+fprintf('Load bus voltages:\n');
+for i = 1:length(load_buses_b)
+    node = load_buses_b(i);
+    fprintf('  Node %d: %.4f p.u. (angle: %.2f°)\n', node, abs(VNF_b(node)), angle(VNF_b(node))*180/pi);
+end
+
+% Test Part (c) results
+fprintf('\nPART (C) VALIDATION:\n');
+fprintf('-------------------\n');
+
+% Check tie-line current balance
+fprintf('Tie-line currents:\n');
+for i = 1:length(IT_c)
+    fprintf('  Tie-line %d: %.4f + j%.4f p.u. (|I| = %.4f p.u.)\n', ...
+            i, real(IT_c(i)), imag(IT_c(i)), abs(IT_c(i)));
+end
+
+fprintf('Sum of tie-line currents: %.6f + j%.6f (should be near zero)\n', ...
+        real(sum(IT_c)), imag(sum(IT_c)));
+
+% Check power balance
+S_injected_c = VNF_c .* conj(IintN);
+total_power_c = sum(S_injected_c);
+fprintf('Total power balance: %.6f + j%.6f VA\n', real(total_power_c), imag(total_power_c));
+
+% Check voltage magnitude range
+fprintf('Voltage magnitude range: %.4f to %.4f p.u.\n', min(abs(VNF_c)), max(abs(VNF_c)));
+
+% Check specific buses mentioned in connection
+connection_buses_c = [3, 4, 5, 7];
+fprintf('Connection bus voltages:\n');
+for i = 1:length(connection_buses_c)
+    node = connection_buses_c(i);
+    fprintf('  Node %d: %.4f p.u. (angle: %.2f°)\n', node, abs(VNF_c(node)), angle(VNF_c(node))*180/pi);
+end
+
+% Physical consistency checks
+fprintf('\nPHYSICAL CONSISTENCY CHECKS:\n');
+fprintf('---------------------------\n');
+
+% 1. Check if voltages are within reasonable range (0.9-1.1 p.u. typical)
+reasonable_voltage = all(abs(VNF_b) > 0.8 & abs(VNF_b) < 1.2);
+fprintf('Voltages in reasonable range (0.8-1.2 p.u.): %s\n', string(reasonable_voltage));
+
+% 2. Check if angles are within typical range (-30° to +30°)
+angles_b = angle(VNF_b) * 180/pi;
+reasonable_angles = all(angles_b > -50 & angles_b < 50);
+fprintf('Angles in reasonable range (-50° to +50°): %s\n', string(reasonable_angles));
+
+% 3. Check if there's a clear reference angle (one angle near 0°)
+[~, ref_node] = min(abs(angles_b));
+fprintf('Reference angle node: %d (angle = %.2f°)\n', ref_node, angles_b(ref_node));
+
+% Compare with your friend's results
+fprintf('\nCOMPARISON WITH FRIEND''S RESULTS:\n');
+fprintf('--------------------------------\n');
+
+% For part (b)
+fprintf('Part (b) - Tie-line current magnitude:\n');
+fprintf('  Your result: %.4f p.u.\n', abs(IT_b));
+fprintf('  Friend''s result: 0.0563 p.u.\n');
+fprintf('  Difference: %.4f p.u.\n', abs(abs(IT_b) - 0.0563));
+
+% For part (c) - check if currents are balanced
+fprintf('\nPart (c) - Tie-line current balance:\n');
+fprintf('  Your sum: %.6f + j%.6f p.u.\n', real(sum(IT_c)), imag(sum(IT_c)));
+fprintf('  Friend''s sum: %.6f + j%.6f p.u.\n', 0.2727-0.2835, -0.0209+0.0202);
+
+% Save validation results
+save('validation_results.mat', 'VNF_b', 'IT_b', 'VNF_c', 'IT_c');
+
+fprintf('\n=== VALIDATION COMPLETE ===\n');
