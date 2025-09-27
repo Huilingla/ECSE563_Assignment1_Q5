@@ -3,7 +3,7 @@ clear all; close all; clc;
 
 fprintf('=== GENERALIZED FAULT CALCULATION VALIDATION ===\n\n');
 
-%% Part (a): Line 8 outage in IEEE 9-bus system
+%% Part (a): Line 8 outage in IEEE 9-bus system - CORRECTED
 fprintf('PART (A): LINE 8 OUTAGE (8-9) IN IEEE 9-BUS SYSTEM\n');
 fprintf('==================================================\n\n');
 
@@ -38,9 +38,11 @@ b_f(line_to_remove) = [];
 YF = admittance(nfrom_f, nto_f, r_f, x_f, b_f);
 IintF = Iint;  % Same current injections
 
-% Connect at all nodes (simulate line outage)
-idN = 1:9;
-idF = 1:9;
+% CORRECTION: Connect only at nodes 8 and 9 (the endpoints of the removed line)
+idN = [8, 9];  % Only connect at nodes 8 and 9
+idF = [8, 9];  % Corresponding nodes in fault network
+
+fprintf('Modeling line 8-9 outage by connecting systems only at nodes %d and %d\n', idN(1), idN(2));
 
 [IT_a, VNF_a] = genfault(YN, YF, IintN, IintF, idN, idF);
 
@@ -54,6 +56,30 @@ fprintf('----   -------------   --------------   ------\n');
 for i = 1:9
     fprintf('%2d       %8.4f        %8.4f       %7.4f\n', ...
             i, abs(VN_original(i)), abs(VNF_a(i)), abs(VNF_a(i)) - abs(VN_original(i)));
+end
+
+% Additional analysis specific to line outage
+fprintf('\nIMPACT ANALYSIS OF LINE 8-9 OUTAGE:\n');
+fprintf('===================================\n');
+fprintf('Tie-line currents (representing power flow on outaged line):\n');
+for i = 1:length(IT_a)
+    fprintf('  Connection N%d-F%d: %.4f ∠ %.2f° p.u. (|I| = %.4f p.u.)\n', ...
+            idN(i), idF(i), abs(IT_a(i)), angle(IT_a(i))*180/pi, abs(IT_a(i)));
+end
+
+% Check voltages at endpoints
+fprintf('\nVoltage changes at line endpoints:\n');
+fprintf('Node 8: %.4f -> %.4f p.u. (change: %.4f p.u.)\n', ...
+        abs(VN_original(8)), abs(VNF_a(8)), abs(VNF_a(8)) - abs(VN_original(8)));
+fprintf('Node 9: %.4f -> %.4f p.u. (change: %.4f p.u.)\n', ...
+        abs(VN_original(9)), abs(VNF_a(9)), abs(VNF_a(9)) - abs(VN_original(9)));
+
+% Calculate the effective impedance seen by the "outaged line"
+if abs(IT_a(1)) > 1e-6  % Avoid division by zero
+    V_diff = VNF_a(8) - VNF_a(9);
+    Z_effective = V_diff / IT_a(1);
+    fprintf('Effective impedance seen by outaged line: %.4f + j%.4f p.u.\n', ...
+            real(Z_effective), imag(Z_effective));
 end
 
 %% Part (b): Two IEEE 9-bus systems connected at node 1 and node 5
