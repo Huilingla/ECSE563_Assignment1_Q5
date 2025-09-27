@@ -11,8 +11,8 @@ fprintf('==================================================\n\n');
 ieee9_A1;
 
 % Create healthy network (full system)
-YN = admittance(nfrom, nto, r, x, b);
-IintN = Iint;
+YN_a = admittance(nfrom, nto, r, x, b);
+IintN_a = Iint;
 
 % Create fault network (system with line 8-9 removed)
 fprintf('Creating fault network by removing line 8-9...\n');
@@ -35,27 +35,27 @@ r_f(line_to_remove) = [];
 x_f(line_to_remove) = [];
 b_f(line_to_remove) = [];
 
-YF = admittance(nfrom_f, nto_f, r_f, x_f, b_f);
-IintF = Iint;  % Same current injections
+YF_a = admittance(nfrom_f, nto_f, r_f, x_f, b_f);
+IintF_a = Iint;  % Same current injections
 
 % CORRECTION: Connect only at nodes 8 and 9 (the endpoints of the removed line)
-idN = [8, 9];  % Only connect at nodes 8 and 9
-idF = [8, 9];  % Corresponding nodes in fault network
+idN_a = [8, 9];  % Only connect at nodes 8 and 9
+idF_a = [8, 9];  % Corresponding nodes in fault network
 
-fprintf('Modeling line 8-9 outage by connecting systems only at nodes %d and %d\n', idN(1), idN(2));
+fprintf('Modeling line 8-9 outage by connecting systems only at nodes %d and %d\n', idN_a(1), idN_a(2));
 
-[IT_a, VNF_a] = genfault(YN, YF, IintN, IintF, idN, idF);
+[IT_a, VNF_a] = genfault(YN_a, YF_a, IintN_a, IintF_a, idN_a, idF_a);
 
 % Display results for line outage
 fprintf('\nLINE OUTAGE ANALYSIS RESULTS:\n');
 fprintf('=============================\n');
 
-VN_original = linsolve(YN, IintN);
+VN_original_a = linsolve(YN_a, IintN_a);
 fprintf('Node   Pre-fault |V|   Post-outage |V|   Change\n');
 fprintf('----   -------------   --------------   ------\n');
 for i = 1:9
     fprintf('%2d       %8.4f        %8.4f       %7.4f\n', ...
-            i, abs(VN_original(i)), abs(VNF_a(i)), abs(VNF_a(i)) - abs(VN_original(i)));
+            i, abs(VN_original_a(i)), abs(VNF_a(i)), abs(VNF_a(i)) - abs(VN_original_a(i)));
 end
 
 % Additional analysis specific to line outage
@@ -64,15 +64,15 @@ fprintf('===================================\n');
 fprintf('Tie-line currents (representing power flow on outaged line):\n');
 for i = 1:length(IT_a)
     fprintf('  Connection N%d-F%d: %.4f ∠ %.2f° p.u. (|I| = %.4f p.u.)\n', ...
-            idN(i), idF(i), abs(IT_a(i)), angle(IT_a(i))*180/pi, abs(IT_a(i)));
+            idN_a(i), idF_a(i), abs(IT_a(i)), angle(IT_a(i))*180/pi, abs(IT_a(i)));
 end
 
 % Check voltages at endpoints
 fprintf('\nVoltage changes at line endpoints:\n');
 fprintf('Node 8: %.4f -> %.4f p.u. (change: %.4f p.u.)\n', ...
-        abs(VN_original(8)), abs(VNF_a(8)), abs(VNF_a(8)) - abs(VN_original(8)));
+        abs(VN_original_a(8)), abs(VNF_a(8)), abs(VNF_a(8)) - abs(VN_original_a(8)));
 fprintf('Node 9: %.4f -> %.4f p.u. (change: %.4f p.u.)\n', ...
-        abs(VN_original(9)), abs(VNF_a(9)), abs(VNF_a(9)) - abs(VN_original(9)));
+        abs(VN_original_a(9)), abs(VNF_a(9)), abs(VNF_a(9)) - abs(VN_original_a(9)));
 
 % Calculate the effective impedance seen by the "outaged line"
 if abs(IT_a(1)) > 1e-6  % Avoid division by zero
@@ -87,8 +87,8 @@ fprintf('\n\nPART (B): TWO IEEE 9-BUS SYSTEMS CONNECTED AT N1-N5\n');
 fprintf('==================================================\n\n');
 
 % Two identical IEEE 9-bus systems
-YN_b = YN;
-YF_b = YN;  % Same system
+YN_b = YN_a;
+YF_b = YN_a;  % Same system
 IintN_b = Iint;
 IintF_b = Iint;
 
@@ -101,6 +101,16 @@ idF_b = 5;
 fprintf('\nTwo-system connection results:\n');
 fprintf('Tie-line current: %.4f ∠ %.2f° p.u.\n', abs(IT_b(1)), angle(IT_b(1))*180/pi);
 
+% Display voltage results for part (b)
+VN_original_b = linsolve(YN_b, IintN_b);
+fprintf('\nVoltage comparison for Part (b):\n');
+fprintf('Node   Pre-connection |V|   Post-connection |V|   Change\n');
+fprintf('----   ------------------   -------------------   ------\n');
+for i = 1:min(9, length(VNF_b))
+    fprintf('%2d       %8.4f            %8.4f           %7.4f\n', ...
+            i, abs(VN_original_b(i)), abs(VNF_b(i)), abs(VNF_b(i)) - abs(VN_original_b(i)));
+end
+
 %% Part (c): Multiple connections between two systems
 fprintf('\n\nPART (C): MULTIPLE CONNECTIONS N3-N7 AND N5-N4\n');
 fprintf('==============================================\n\n');
@@ -108,7 +118,7 @@ fprintf('==============================================\n\n');
 idN_c = [3, 5];
 idF_c = [7, 4];
 
-[IT_c, VNF_c] = genfault(YN, YN, Iint, Iint, idN_c, idF_c);
+[IT_c, VNF_c] = genfault(YN_a, YN_a, Iint, Iint, idN_c, idF_c);
 
 fprintf('\nMultiple connection results:\n');
 for i = 1:length(IT_c)
@@ -116,10 +126,21 @@ for i = 1:length(IT_c)
             i, idN_c(i), idF_c(i), abs(IT_c(i)), angle(IT_c(i))*180/pi);
 end
 
+% Display voltage results for part (c)
+VN_original_c = linsolve(YN_a, Iint);
+fprintf('\nVoltage comparison for Part (c):\n');
+fprintf('Node   Pre-connection |V|   Post-connection |V|   Change\n');
+fprintf('----   ------------------   -------------------   ------\n');
+for i = 1:min(9, length(VNF_c))
+    fprintf('%2d       %8.4f            %8.4f           %7.4f\n', ...
+            i, abs(VN_original_c(i)), abs(VNF_c(i)), abs(VNF_c(i)) - abs(VN_original_c(i)));
+end
+
 %% Part (d): IEEE 24-bus system interconnected with itself
 fprintf('\n\nPART (D): IEEE 24-BUS SYSTEM SELF-INTERCONNECTION\n');
 fprintf('================================================\n\n');
 
+clear all;
 % Load IEEE 24-bus system
 ieee24_A1;
 
@@ -170,11 +191,5 @@ fprintf('Maximum voltage change: %.4f p.u. at node %d\n', max_change, max_node);
 fprintf('Total tie-line power flow: %.4f p.u.\n', sum(abs(IT_d)));
 
 fprintf('\n=== GENERALIZED FAULT ANALYSIS COMPLETE ===\n');
-
-% Save results
-save('genfault_results.mat', 'IT_a', 'VNF_a', 'IT_b', 'VNF_b', 'IT_c', 'VNF_c', 'IT_d', 'VNF_d');
-
-% Save validation results
-save('validation_results.mat', 'VNF_b', 'IT_b', 'VNF_c', 'IT_c');
 
 fprintf('\n=== VALIDATION COMPLETE ===\n');
