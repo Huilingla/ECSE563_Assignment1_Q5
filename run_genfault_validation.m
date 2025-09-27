@@ -7,8 +7,6 @@ fprintf('=== GENERALIZED FAULT CALCULATION VALIDATION ===\n\n');
 fprintf('PART (A): LINE 8 OUTAGE (8-9) IN IEEE 9-BUS SYSTEM\n');
 fprintf('==================================================\n\n');
 
-clear all;
-
 % Load IEEE 9-bus system
 ieee9_A1;
 
@@ -122,7 +120,6 @@ end
 fprintf('\n\nPART (D): IEEE 24-BUS SYSTEM SELF-INTERCONNECTION\n');
 fprintf('================================================\n\n');
 
-clear all;
 % Load IEEE 24-bus system
 ieee24_A1;
 
