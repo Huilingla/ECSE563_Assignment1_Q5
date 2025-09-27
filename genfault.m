@@ -102,45 +102,32 @@ function [IT, VNF] = genfault(YN, YF, IintN, IintF, idN, idF)
                 i, idN(i), idF(i), real(IT(i)), imag(IT(i)), abs(IT(i)));
     end
     
-    % Step 5: Display healthy network voltages
-    fprintf('\nStep 4: Healthy Network Voltages with Fault Network Connected\n');
-    fprintf('-------------------------------------------------------------\n');
+   % Step 5: Display healthy network voltages - CORRECTED VERSION
+fprintf('\nStep 4: Healthy Network Voltages with Fault Network Connected\n');
+fprintf('-------------------------------------------------------------\n');
+
+VN_original = linsolve(YN, IintN);
+
+fprintf('Node   Pre-fault |V|∠θ°   Post-fault |V|∠θ°   Mag Change   Phase Change (°)\n');
+fprintf('----   -----------------   ------------------   ----------   ---------------\n');
+for i = 1:N
+    pre_mag = abs(VN_original(i));
+    post_mag = abs(VNF(i));
+    mag_change = post_mag - pre_mag;
     
-    VN_original = linsolve(YN, IintN);
+    pre_angle = angle(VN_original(i)) * 180/pi;
+    post_angle = angle(VNF(i)) * 180/pi;
+    phase_change = post_angle - pre_angle;
     
-    fprintf('Node   Pre-fault |V|   Post-fault |V|   Magnitude Change   Phase Change (°)\n');
-    fprintf('----   --------------   ---------------   --------------   ---------------\n');
-    for i = 1:N
-        pre_mag = abs(VN_original(i));
-        post_mag = abs(VNF(i));
-        mag_change = post_mag - pre_mag;
-        phase_change = (angle(VNF(i)) - angle(VN_original(i))) * 180/pi;
-        
-        fprintf('%3d      %8.4f         %8.4f        %9.4f         %9.2f\n', ...
-                i, pre_mag, post_mag, mag_change, phase_change);
-    end
-    
-    % Display voltage in polar form
-    fprintf('\nHealthy Network Voltages (Polar Form):\n');
-    fprintf('Node     Magnitude (p.u.)   Phase Angle (°)\n');
-    fprintf('----     ----------------   --------------\n');
-    for i = 1:N
-        fprintf('%3d         %8.4f           %8.2f\n', ...
-                i, abs(VNF(i)), angle(VNF(i))*180/pi);
-    end
-    
-    fprintf('\nStep 5: Results Summary\n');
-    fprintf('----------------------\n');
-    fprintf('Healthy network voltages calculated for %d nodes\n', N);
-    fprintf('Tie-line currents calculated for %d connections\n', length(idN));
-    
-    % Display maximum voltage changes
-    voltage_mag_changes = abs(VNF) - abs(VN_original);
-    voltage_phase_changes = (angle(VNF) - angle(VN_original)) * 180/pi;
-    
-    [max_mag_change, max_mag_node] = max(abs(voltage_mag_changes));
-    [max_phase_change, max_phase_node] = max(abs(voltage_phase_changes));
-    
-    fprintf('\nMaximum voltage magnitude change: %.4f p.u. at node %d\n', max_mag_change, max_mag_node);
-    fprintf('Maximum voltage phase change: %.2f° at node %d\n', max_phase_change, max_phase_node);
+    fprintf('%3d     %6.4f∠%6.2f°    %6.4f∠%6.2f°    %9.4f      %9.2f\n', ...
+            i, pre_mag, pre_angle, post_mag, post_angle, mag_change, phase_change);
+end
+
+% Display voltage in polar form (final state only)
+fprintf('\nHealthy Network Voltages - Final State (Polar Form):\n');
+fprintf('Node     Magnitude (p.u.)   Phase Angle (°)\n');
+fprintf('----     ----------------   --------------\n');
+for i = 1:N
+    fprintf('%3d         %8.4f           %8.2f\n', ...
+            i, abs(VNF(i)), angle(VNF(i))*180/pi);
 end
